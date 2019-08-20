@@ -293,6 +293,13 @@ class RestServlet(object):
         if hasattr(self, "PATTERNS"):
             patterns = self.PATTERNS
 
+
+            name = self.__class__.__name__
+            if name == "ProfileGroupRestServlet":
+                logger.debug("%s, patterns %s" % (self.__class__.__name__, self.PATTERNS))
+            else:
+                logger.debug("DAN3 not group servlet")
+
             for method in ("GET", "PUT", "POST", "OPTIONS", "DELETE"):
                 if hasattr(self, "on_%s" % (method,)):
                     servlet_classname = self.__class__.__name__

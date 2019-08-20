@@ -142,8 +142,9 @@ class DomainSpecificString(namedtuple("DomainSpecificString", ("localpart", "dom
     def from_string(cls, s):
         """Parse the string given by 's' into a structure object."""
         if len(s) < 1 or s[0:1] != cls.SIGIL:
+            first_char = s
             raise SynapseError(
-                400, "Expected %s string to start with '%s'" % (cls.__name__, cls.SIGIL)
+                400, "Expected %s string %s to start with '%s' but starts with '%s'" % (cls.__name__, s, cls.SIGIL, first_char)
             )
 
         parts = s[1:].split(":", 1)

@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from canonicaljson import json
+
 from twisted.internet import defer
 
 from synapse.api.errors import StoreError
@@ -178,3 +180,25 @@ class ProfileStore(ProfileWorkerStore):
 
         if res:
             return True
+
+    def get_groups_for_user(self, user_id):
+        
+        def _get_groups_for_user_txn(txn):
+            sql = """
+                SELECT group_id, membership, content
+                FROM local_group_membership
+                WHERE user_id = ?
+            """
+            txn.execute(sql, (user_id,))
+            return [
+                {
+                    "group_id": group_id,
+                    "membership": membership,
+                    "content": json.loads(content_json)
+                }
+                for group_id, membership, content_json in txn
+            ]
+        return self.runInteraction(
+            "get_groups_for_user_txn", _get_groups_for_user_txn
+        )
+

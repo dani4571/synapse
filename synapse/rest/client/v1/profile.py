@@ -20,6 +20,10 @@ from synapse.http.servlet import RestServlet, parse_json_object_from_request
 from synapse.rest.client.v2_alpha._base import client_patterns
 from synapse.types import UserID
 
+from canonicaljson import json
+import logging
+logger = logging.getLogger(__name__)
+
 
 class ProfileDisplaynameRestServlet(RestServlet):
     PATTERNS = client_patterns("/profile/(?P<user_id>[^/]*)/displayname", v1=True)
@@ -43,7 +47,7 @@ class ProfileDisplaynameRestServlet(RestServlet):
         yield self.profile_handler.check_profile_query_allowed(user, requester_user)
 
         displayname = yield self.profile_handler.get_displayname(user)
-
+        logger.debug("DAN1")
         ret = {}
         if displayname is not None:
             ret["displayname"] = displayname
@@ -58,6 +62,7 @@ class ProfileDisplaynameRestServlet(RestServlet):
 
         content = parse_json_object_from_request(request)
 
+        return (200, ret)
         try:
             new_name = content["displayname"]
         except Exception:
@@ -69,6 +74,38 @@ class ProfileDisplaynameRestServlet(RestServlet):
 
     def on_OPTIONS(self, request, user_id):
         return (200, {})
+
+class ProfileGroupRestServlet(RestServlet):
+    PATTERNS = client_patterns("/profile/(?P<user_id>[^/]*)/groups", v1=True)
+
+    def __init__(self, hs):
+        super(ProfileGroupRestServlet, self).__init__()
+        self.hs = hs
+        self.profile_handler = hs.get_profile_handler()
+        self.auth = hs.get_auth()
+
+    @defer.inlineCallbacks
+    def on_GET(self, request, user_id):
+        requester_user = None
+
+        if self.hs.config.require_auth_for_profile_requests:
+            requester = yield self.auth.get_user_by_req(request)
+            requester_user = requester.user
+
+
+        user = UserID.from_string(user_id)
+
+        yield self.profile_handler.check_profile_query_allowed(user, requester_user)
+
+        group_data = yield self.profile_handler.get_groups(user_id)
+
+        logger.debug("DAN2")
+
+        ret = {}
+        if group_data is not None:
+            ret["group_info"] = group_data
+
+        return (200, ret)
 
 
 class ProfileAvatarURLRestServlet(RestServlet):
@@ -156,4 +193,5 @@ class ProfileRestServlet(RestServlet):
 def register_servlets(hs, http_server):
     ProfileDisplaynameRestServlet(hs).register(http_server)
     ProfileAvatarURLRestServlet(hs).register(http_server)
+    ProfileGroupRestServlet(hs).register(http_server)
     ProfileRestServlet(hs).register(http_server)

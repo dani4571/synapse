@@ -16,6 +16,8 @@
 import logging
 import sys
 
+
+
 from twisted.internet import reactor
 from twisted.web.resource import NoResource
 
@@ -47,6 +49,7 @@ from synapse.replication.tcp.client import ReplicationClientHandler
 from synapse.rest.client.v1.profile import (
     ProfileAvatarURLRestServlet,
     ProfileDisplaynameRestServlet,
+    ProfileGroupRestServlet,
     ProfileRestServlet,
 )
 from synapse.rest.client.v1.room import (
@@ -107,6 +110,7 @@ class EventCreatorServer(HomeServer):
                     JoinRoomAliasServlet(self).register(resource)
                     ProfileAvatarURLRestServlet(self).register(resource)
                     ProfileDisplaynameRestServlet(self).register(resource)
+                    ProfileGroupRestServlet(self).register(resource)
                     ProfileRestServlet(self).register(resource)
                     resources.update(
                         {

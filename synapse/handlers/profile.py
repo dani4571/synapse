@@ -57,6 +57,36 @@ class BaseProfileHandler(BaseHandler):
         self.user_directory_handler = hs.get_user_directory_handler()
 
     @defer.inlineCallbacks
+    def get_groups(self, user_id):
+        target_user = UserID.from_string(user_id)
+
+        if self.hs.is_mine(target_user):
+            try:
+                group_info = yield self.store.get_groups_for_user(
+                    user_id
+                )
+            except StoreError as e:
+                if e.code == 404:
+                    raise SynapseError(404, "Profile was not found", Codes.NOT_FOUND)
+                raise
+
+            return {"group_info": group_info}
+        else:
+            try:
+                result = yield self.federation.make_query(
+                    destination=target_user.domain,
+                    query_type="profile",
+                    args={"user_id": user_id},
+                    ignore_backoff=True,
+                )
+                return result
+            except RequestSendFailed as e:
+                raise_from(SynapseError(502, "Failed to fetch profile"), e)
+            except HttpResponseException as e:
+                raise e.to_synapse_error()
+
+
+    @defer.inlineCallbacks
     def get_profile(self, user_id):
         target_user = UserID.from_string(user_id)
 
